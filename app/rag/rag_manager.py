@@ -92,6 +92,30 @@ class RAGManager:
             query,
         )
 
+    def get_context_knowledge(
+        self,
+        query: str,
+        limit: int = 5,
+    ) -> list[str]:
+        """
+        Return knowledge snippets suitable for AgentContext.knowledge_context.
+        """
+
+        results = self._pipeline.search(query)
+
+        if not results:
+            return []
+
+        knowledge = []
+
+        for item in results[:limit]:
+            if hasattr(item, "content") and item.content:
+                knowledge.append(item.content)
+            elif isinstance(item, dict) and item.get("content"):
+                knowledge.append(item["content"])
+
+        return knowledge
+
     def clear(
         self,
     ) -> None:

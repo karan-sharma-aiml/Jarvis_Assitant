@@ -1,65 +1,119 @@
-from app.agent.agent import Agent
-from app.agent.executor import Executor
-from app.agent.manager import AgentManager
-from app.agent.observer import Observer
-from app.agent.planner import Planner
-from app.agent.reasoner import Reasoner
-from app.agent.reflection import Reflection
+"""
+Integration Test
 
-from app.tools.calculator import CalculatorTool
-from app.tools.manager import ToolManager
-from app.tools.registry import ToolRegistry
+JARVIS Context Engine
+"""
+
+from app.context.manager import ContextManager
 
 
-registry = ToolRegistry()
+def main() -> None:
 
-registry.register(CalculatorTool())
+    manager = ContextManager()
 
-tool_manager = ToolManager(registry)
+    context = manager.create_context(
+        user_input="Explain Artificial Intelligence",
 
-agent = Agent(
-    planner=Planner(),
-    reasoner=Reasoner(),
-    executor=Executor(tool_manager),
-    observer=Observer(),
-    reflection=Reflection(),
-)
+        conversation_context=[
+            "User greeted JARVIS.",
+            "User wants to learn AI.",
+        ],
 
-manager = AgentManager(agent)
+        working_memory={
+            "current_topic": "AI",
+        },
 
-state = manager.execute(
-    "Calculate 250 / 5",
-    selected_tool="calculator",
-    tool_arguments={
-        "expression": "250 / 5"
-    }
-)
+        semantic_memory=[
+            "User is a B.Tech AIML student.",
+        ],
 
-print("=" * 60)
+        episodic_memory=[
+            "User completed Phase 7.",
+        ],
 
-print("Agent Manager Test")
+        preferences={
+            "language": "English",
+            "response_style": "Detailed",
+        },
 
-print()
+        knowledge_context=[
+            "Artificial Intelligence is the simulation of human intelligence.",
+        ],
 
-print("Success:")
+        metadata={
+            "session": "phase_8_demo",
+            "source": "integration_test",
+        },
+    )
 
-print(state.success)
+    print("=" * 60)
 
-print()
+    print("User Input")
+    print("-" * 60)
+    print(context.user_input)
 
-print("Tool Result:")
+    print()
 
-print(state.tool_result)
+    print("Conversation")
+    print("-" * 60)
+    print(context.conversation_context)
 
-print()
+    print()
 
-print("Reflection:")
+    print("Working Memory")
+    print("-" * 60)
+    print(context.working_memory)
 
-print(state.metadata["reflection"])
+    print()
 
-print()
+    print("Semantic Memory")
+    print("-" * 60)
+    print(context.semantic_memory)
 
-print("Thoughts:")
+    print()
 
-for thought in state.thoughts:
-    print(thought)
+    print("Episodic Memory")
+    print("-" * 60)
+    print(context.episodic_memory)
+
+    print()
+
+    print("Preferences")
+    print("-" * 60)
+    print(context.preferences)
+
+    print()
+
+    print("Knowledge Context")
+    print("-" * 60)
+    print(context.knowledge_context)
+
+    print()
+
+    print("Metadata")
+    print("-" * 60)
+    print(context.metadata)
+
+    print()
+
+    print("Timestamp")
+    print("-" * 60)
+    print(context.timestamp)
+
+    print()
+
+    print("Health")
+    print("-" * 60)
+    print("Has Memory :", context.has_memory)
+    print("Has Knowledge :", context.has_knowledge)
+    print("Is Empty :", context.is_empty)
+
+    print()
+
+    print("=" * 60)
+    print("Context Engine Integration Test Passed")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

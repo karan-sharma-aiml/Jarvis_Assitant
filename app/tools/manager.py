@@ -64,6 +64,25 @@ class ToolManager:
         """
         return self._registry.list_tools()
 
+    def get_context_tools(self) -> list[dict[str, str]]:
+        """
+        Return lightweight metadata for tools available to the Context Engine.
+        """
+
+        tools: list[dict[str, str]] = []
+
+        for tool_name in self.list_tools():
+            tool = self._registry.get(tool_name)
+            tools.append(
+                {
+                    "name": tool_name,
+                    "description": tool.description,
+                    "category": str(tool.category),
+                }
+            )
+
+        return tools
+
     def execute(
         self,
         tool_name: str,

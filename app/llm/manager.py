@@ -12,8 +12,10 @@ from app.core.exceptions import (
     ProviderConnectionError,
     ProviderNotFoundError,
 )
+from app.llm.prompts.builder import PromptBuilder, PromptContext
 from app.llm.providers.gemini_provider import GeminiProvider
 from app.llm.providers.ollama_provider import OllamaProvider
+from app.response.response_manager import ResponseManager
 
 if TYPE_CHECKING:
     from app.llm.base import BaseLLMProvider
@@ -198,6 +200,41 @@ class LLMManager:
             provider_enum.value,
         )
 
+    def get_context_llm(self) -> dict[str, str]:
+        """
+        Return lightweight metadata for the active LLM provider.
+        """
+
+        provider = self.get_provider()
+
+        return {
+            "provider": provider.provider_name,
+            "model": getattr(provider, "model_name", ""),
+            "temperature": str(getattr(provider, "temperature", "")),
+        }
+
+    def build_prompt(self, context: "AgentContext") -> str:
+        """Assemble a prompt from the supplied AgentContext."""
+        from app.context.models import AgentContext
+
+        if not isinstance(context, AgentContext):
+            raise TypeError("context must be an AgentContext")
+
+        prompt_context = PromptContext(
+            roles=["assistant"],
+            memory="\n".join(context.conversation_context or []),
+            rag_context="\n".join(context.knowledge_context or []),
+            conversation_history="\n".join(context.conversation_context or []),
+            user_instruction=context.user_input,
+            additional_context="\n".join(
+                [
+                    f"Working Memory: {context.working_memory}",
+                    f"Preferences: {context.preferences}",
+                ]
+            ),
+        )
+        return PromptBuilder.build(prompt_context)
+
     def chat(self, message: str, **kwargs) -> str:
         """
         Send a chat message to the active provider.
@@ -231,6 +268,17 @@ class LLMManager:
         """
         provider = self.get_provider()
         return provider.generate(prompt, **kwargs)
+
+    def generate_response(self, context: "AgentContext") -> str:
+        """Build a prompt from context, generate a raw response, and normalize it."""
+        from app.context.models import AgentContext
+
+        if not isinstance(context, AgentContext):
+            raise TypeError("context must be an AgentContext")
+
+        prompt = self.build_prompt(context)
+        raw_response = self.generate(prompt)
+        return ResponseManager.format_response(raw_response)
 
     def health_check(self) -> bool:
         """

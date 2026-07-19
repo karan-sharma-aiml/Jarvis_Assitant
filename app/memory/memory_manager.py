@@ -18,6 +18,7 @@ This module contains no SQLite queries.
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 
 from app.memory.conversation import ConversationMemory
 from app.memory.database import Database
@@ -82,6 +83,72 @@ class MemoryManager:
         return self.retriever.retrieve_context(
             query=query,
             limit=limit,
+        )
+
+    def get_context_payload(
+        self,
+        query: str,
+        limit: int = 5,
+    ) -> dict[str, object]:
+        """
+        Return a structured memory payload for AgentContext creation.
+        """
+
+        conversation_context = [
+            (
+                f"User: {entry.get('user', '')}\n"
+                f"Assistant: {entry.get('assistant', '')}"
+            ).strip()
+            for entry in self.conversations.recent(limit=limit)
+            if isinstance(entry, dict)
+        ]
+
+        working_memory = {
+            "current_project": self.working.state.current_project,
+            "current_task": self.working.state.current_task,
+            "current_file": self.working.state.current_file,
+            "current_goal": self.working.state.current_goal,
+            "active_roles": list(self.working.state.active_roles),
+            "variables": dict(self.working.state.variables),
+        }
+
+        semantic_memory = [
+            f"- {item.record.key}: {item.record.value}"
+            for item in self.retriever.retrieve(
+                query=query,
+                limit=limit,
+            )
+        ]
+
+        episodic_memory = [
+            (
+                f"{entry.get('title', '')}: {entry.get('description', '')}"
+            ).strip()
+            for entry in self.episodic.list_events()
+            if isinstance(entry, dict)
+        ]
+
+        preferences = self.preferences.list_preferences()
+
+        return {
+            "conversation_context": conversation_context,
+            "working_memory": working_memory,
+            "semantic_memory": semantic_memory,
+            "episodic_memory": episodic_memory,
+            "preferences": preferences,
+        }
+
+    def save_conversation(
+        self,
+        user_message: str,
+        assistant_message: str,
+    ) -> None:
+        """Persist one user/assistant exchange through the memory subsystem."""
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S%f")
+        self.conversations.save(
+            key=f"conversation-{timestamp}",
+            user_message=user_message,
+            assistant_message=assistant_message,
         )
 
     def summarize(
