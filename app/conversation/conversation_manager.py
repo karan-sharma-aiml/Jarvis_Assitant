@@ -1,39 +1,81 @@
-"""Lightweight conversation orchestration for JARVIS."""
+"""
+Conversation Manager
+
+Manages conversation history and context.
+
+Responsibilities
+----------------
+- Store conversation messages.
+- Retrieve recent history.
+- Clear conversation.
+
+Contains NO LLM logic.
+"""
 
 from __future__ import annotations
 
-from app.context.manager import ContextManager
-from app.llm.manager import LLMManager
-from app.memory.memory_manager import MemoryManager
+from app.conversation.models import (
+    ConversationContext,
+    ConversationMessage,
+    MessageRole,
+)
 
 
 class ConversationManager:
-    """Coordinate context creation, response generation, and memory persistence."""
+    """
+    Manages conversation state.
+    """
 
-    def __init__(
+    def __init__(self) -> None:
+
+        self._context = ConversationContext()
+
+    @property
+    def context(self) -> ConversationContext:
+        return self._context
+
+    def add_user_message(
         self,
-        context_manager: ContextManager | None = None,
-        llm_manager: LLMManager | None = None,
-        memory_manager: MemoryManager | None = None,
+        content: str,
     ) -> None:
-        self._context_manager = context_manager or ContextManager()
-        self._llm_manager = llm_manager or LLMManager()
-        self._memory_manager = memory_manager or MemoryManager()
 
-    def chat(self, message: str) -> str:
-        """Create context, generate a response, and save the exchange."""
-        if not message or not message.strip():
-            return ""
-
-        normalized_message = message.strip()
-        context = self._context_manager.create_context(
-            user_input=normalized_message,
-        )
-        response = self._llm_manager.generate_response(context)
-
-        self._memory_manager.save_conversation(
-            user_message=normalized_message,
-            assistant_message=response,
+        self._context.add_message(
+            ConversationMessage(
+                role=MessageRole.USER,
+                content=content,
+            )
         )
 
-        return response
+    def add_assistant_message(
+        self,
+        content: str,
+    ) -> None:
+
+        self._context.add_message(
+            ConversationMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+            )
+        )
+
+    def get_history(
+        self,
+        limit: int | None = None,
+    ) -> list[ConversationMessage]:
+
+        if limit is None:
+            return list(self._context.messages)
+
+        return self._context.messages[-limit:]
+
+    def clear(self) -> None:
+        self._context.clear()
+
+    def health_check(self) -> bool:
+        return True
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}"
+            f"(messages={self._context.total_messages})"
+        )

@@ -1,51 +1,41 @@
-from app.executor.executor import Executor
-from app.executor.models import (
-    ExecutionRequest,
-)
-from app.intent.models import (
-    Intent,
-    IntentName,
-)
-from app.router.models import ToolRoute
+from app.jarvis import Jarvis
 
 
 def main():
 
     print("=" * 65)
-    print("PHASE 11.3 - EXECUTOR TEST")
+    print("PHASE 11.8 - JARVIS INTEGRATION TEST")
     print("=" * 65)
 
-    executor = Executor()
+    jarvis = Jarvis()
 
-    assert executor.health_check()
+    assert jarvis.health_check()
 
-    print("Health:", executor.health_check())
-
-    request = ExecutionRequest(
-        intent=Intent(
-            name=IntentName.OPEN_APPLICATION,
-            entities={
-                "application": "notepad",
-            },
-        ),
-        route=ToolRoute(
-            manager="ApplicationManager",
-            method="open",
-        ),
-        arguments={
-            "application": "notepad",
-        },
+    print(
+        "Health:",
+        jarvis.health_check(),
     )
 
-    result = executor.execute(request)
+    result = jarvis.process(
+        "Open Notepad and Take Screenshot"
+    )
 
     print(result)
 
-    assert result.success
+    print()
+
+    context = jarvis.conversation()
+
+    print(
+        "Conversation Messages:",
+        context.total_messages,
+    )
+
+    assert context.total_messages == 2
 
     print()
 
-    print("🎉 PHASE 11.3 EXECUTOR PASSED")
+    print("🎉 JARVIS V1 PASSED")
 
 
 if __name__ == "__main__":
