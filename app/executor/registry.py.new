@@ -1,0 +1,103 @@
+"""
+Manager Registry
+
+Creates and caches manager instances.
+
+Responsibilities
+----------------
+- Create managers lazily.
+- Cache manager instances.
+- Return manager instances.
+- Health checks.
+
+Contains NO execution logic.
+"""
+
+from __future__ import annotations
+
+import logging
+import threading
+
+from app.system.application_manager import ApplicationManager
+from app.system.file_manager import FileManager
+from app.system.volume_manager import VolumeManager
+from app.system.brightness_manager import BrightnessManager
+from app.system.clipboard_manager import ClipboardManager
+from app.system.screenshot_manager import ScreenshotManager
+from app.system.power_manager import PowerManager
+
+logger = logging.getLogger(__name__)
+
+
+class ManagerRegistry:
+    """Central registry for all system managers."""
+
+    def __init__(self) -> None:
+        self._instances: dict[str, object] = {}
+        self._factories: dict[str, type[object]] = {
+            "ApplicationManager": ApplicationManager,
+            "FileManager": FileManager,
+            "VolumeManager": VolumeManager,
+            "BrightnessManager": BrightnessManager,
+            "ClipboardManager": ClipboardManager,
+            "ScreenshotManager": ScreenshotManager,
+            "PowerManager": PowerManager,
+        }
+        self._lock = threading.RLock()
+
+    def get(self, manager_name: str | None) -> object | None:
+        """Return a cached manager instance."""
+        if not isinstance(manager_name, str) or not manager_name.strip():
+            logger.warning("Manager lookup received invalid name %r", manager_name)
+            return None
+
+        normalized_name = manager_name.strip()
+        with self._lock:
+            if normalized_name not in self._factories:
+                logger.debug("Manager '%s' is not registered", normalized_name)
+                return None
+
+            if normalized_name not in self._instances:
+                self._instances[normalized_name] = self._factories[normalized_name]()
+                logger.debug("Created manager instance for '%s'", normalized_name)
+
+            return self._instances[normalized_name]
+
+    def exists(self, manager_name: str | None) -> bool:
+        """Check whether a manager exists."""
+        if not isinstance(manager_name, str) or not manager_name.strip():
+            return False
+
+        normalized_name = manager_name.strip()
+        with self._lock:
+            return normalized_name in self._factories
+
+    def registered_managers(self) -> tuple[str, ...]:
+        """Return all registered manager names."""
+        with self._lock:
+            return tuple(self._factories.keys())
+
+    def count(self) -> int:
+        """Return the number of registered managers."""
+        with self._lock:
+            return len(self._factories)
+
+    def health_check(self) -> bool:
+        """Return True when the registry contains callable managers."""
+        with self._lock:
+            return bool(self._factories) and all(
+                callable(factory) for factory in self._factories.values()
+            )
+
+    def clear_cache(self) -> None:
+        """Clear cached instances."""
+        with self._lock:
+            self._instances.clear()
+
+    def __repr__(self) -> str:
+        with self._lock:
+            cached_count = len(self._instances)
+        return (
+            f"{self.__class__.__name__}"
+            f"(registered={self.count()}, cached={cached_count})"
+        )

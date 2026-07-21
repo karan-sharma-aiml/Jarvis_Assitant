@@ -1,51 +1,51 @@
+from app.executor.executor import Executor
+from app.executor.models import (
+    ExecutionRequest,
+)
 from app.intent.models import (
     Intent,
     IntentName,
 )
-from app.router.tool_router import ToolRouter
+from app.router.models import ToolRoute
 
 
 def main():
 
     print("=" * 65)
-    print("PHASE 11.2 - TOOL ROUTER TEST")
+    print("PHASE 11.3 - EXECUTOR TEST")
     print("=" * 65)
 
-    router = ToolRouter()
+    executor = Executor()
 
-    assert router.health_check()
+    assert executor.health_check()
 
-    print("Health:", router.health_check())
-    print("Routes:", router.route_count())
-    print()
+    print("Health:", executor.health_check())
 
-    intent = Intent(
-        name=IntentName.OPEN_APPLICATION,
-        entities={
-            "application": "vscode",
+    request = ExecutionRequest(
+        intent=Intent(
+            name=IntentName.OPEN_APPLICATION,
+            entities={
+                "application": "notepad",
+            },
+        ),
+        route=ToolRoute(
+            manager="ApplicationManager",
+            method="open",
+        ),
+        arguments={
+            "application": "notepad",
         },
     )
 
-    route = router.route(intent)
+    result = executor.execute(request)
 
-    assert route is not None
+    print(result)
 
-    print(route)
-
-    assert route.manager == "ApplicationManager"
-    assert route.method == "open"
-
-    assert router.can_route(intent)
-
-    unknown = Intent.unknown("Who is Virat Kohli?")
-
-    assert router.route(unknown) is None
-
-    assert not router.can_route(unknown)
+    assert result.success
 
     print()
 
-    print("🎉 PHASE 11.2 TOOL ROUTER PASSED")
+    print("🎉 PHASE 11.3 EXECUTOR PASSED")
 
 
 if __name__ == "__main__":
