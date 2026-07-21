@@ -57,4 +57,3 @@ def test_very_long_query():
 
     assert "bing.com" in browser.opened_urls[0]
     assert browser.opened_urls[0].endswith("a" * 5000)
-*** End Patch

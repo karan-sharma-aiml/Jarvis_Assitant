@@ -12,6 +12,8 @@ import os
 import sys
 import warnings
 
+import pytest
+
 # Capture all warnings
 warnings.simplefilter("always")
 
@@ -22,6 +24,26 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+@pytest.fixture
+def GeminiProvider():
+    from app.llm.providers.gemini_provider import GeminiProvider as Provider
+
+    return Provider
+
+
+@pytest.fixture
+def provider():
+    from app.llm.providers.gemini_provider import GeminiProvider
+
+    if not os.getenv("GEMINI_API_KEY"):
+        return None
+
+    try:
+        return GeminiProvider()
+    except Exception:
+        return None
 
 
 def test_import():

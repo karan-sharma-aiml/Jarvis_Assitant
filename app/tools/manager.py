@@ -37,7 +37,7 @@ class ToolManager:
     """
 
     def __init__(self, registry: ToolRegistry | None = None) -> None:
-        self._registry = registry or ToolRegistry()
+        self._registry = registry if registry is not None else ToolRegistry()
 
     @property
     def registry(self) -> ToolRegistry:

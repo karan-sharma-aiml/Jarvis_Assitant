@@ -1,118 +1,285 @@
 """
-Integration Test
+Phase 10.9 Full System Integration Test
 
-JARVIS Context Engine
+Tests the complete Windows automation subsystem.
+
+Safe:
+- Uses dry_run for power operations.
+- Restores system state where practical.
 """
 
-from app.context.manager import ContextManager
+from __future__ import annotations
+
+from pathlib import Path
+
+from app.system.system_manager import SystemManager
+
+
+LINE = "=" * 70
+
+
+def section(title: str) -> None:
+    print("\n" + LINE)
+    print(title)
+    print(LINE)
 
 
 def main() -> None:
 
-    manager = ContextManager()
+    sm = SystemManager()
 
-    context = manager.create_context(
-        user_input="Explain Artificial Intelligence",
+    print(LINE)
+    print("PHASE 10.9 SYSTEM INTEGRATION TEST")
+    print(LINE)
 
-        conversation_context=[
-            "User greeted JARVIS.",
-            "User wants to learn AI.",
-        ],
+    passed = 0
+    failed = 0
 
-        working_memory={
-            "current_topic": "AI",
-        },
+    # --------------------------------------------------
+    section("Health Check")
 
-        semantic_memory=[
-            "User is a B.Tech AIML student.",
-        ],
+    try:
+        print(sm.health_check())
+        passed += 1
+    except Exception as e:
+        print(e)
+        failed += 1
 
-        episodic_memory=[
-            "User completed Phase 7.",
-        ],
+    # --------------------------------------------------
+    section("Application Manager")
 
-        preferences={
-            "language": "English",
-            "response_style": "Detailed",
-        },
+    try:
 
-        knowledge_context=[
-            "Artificial Intelligence is the simulation of human intelligence.",
-        ],
+        print(sm.open_application("notepad"))
 
-        metadata={
-            "session": "phase_8_demo",
-            "source": "integration_test",
-        },
-    )
+        running = sm.application_running("notepad")
 
-    print("=" * 60)
+        print("Running:", running)
 
-    print("User Input")
-    print("-" * 60)
-    print(context.user_input)
+        input("\nPress ENTER to close Notepad...")
 
-    print()
+        print(sm.close_application("notepad"))
 
-    print("Conversation")
-    print("-" * 60)
-    print(context.conversation_context)
+        passed += 1
 
-    print()
+    except Exception as e:
 
-    print("Working Memory")
-    print("-" * 60)
-    print(context.working_memory)
+        print(e)
 
-    print()
+        failed += 1
 
-    print("Semantic Memory")
-    print("-" * 60)
-    print(context.semantic_memory)
+    # --------------------------------------------------
+    section("File Manager")
 
-    print()
+    try:
 
-    print("Episodic Memory")
-    print("-" * 60)
-    print(context.episodic_memory)
+        root = Path.home() / "Desktop" / "Jarvis_Test"
 
-    print()
+        hello = root / "hello.txt"
 
-    print("Preferences")
-    print("-" * 60)
-    print(context.preferences)
+        world = root / "world.txt"
 
-    print()
+        copy = root / "copy.txt"
 
-    print("Knowledge Context")
-    print("-" * 60)
-    print(context.knowledge_context)
+        moved = root / "moved.txt"
 
-    print()
+        print(sm.create_folder(str(root)))
 
-    print("Metadata")
-    print("-" * 60)
-    print(context.metadata)
+        print(sm.create_file(str(hello)))
 
-    print()
+        print(sm.rename_path(str(hello), str(world)))
 
-    print("Timestamp")
-    print("-" * 60)
-    print(context.timestamp)
+        print(sm.copy_path(str(world), str(copy)))
 
-    print()
+        print(sm.move_path(str(copy), str(moved)))
 
-    print("Health")
-    print("-" * 60)
-    print("Has Memory :", context.has_memory)
-    print("Has Knowledge :", context.has_knowledge)
-    print("Is Empty :", context.is_empty)
+        print(sm.list_directory(str(root)))
 
-    print()
+        input("\nPress ENTER to delete test folder...")
 
-    print("=" * 60)
-    print("Context Engine Integration Test Passed")
-    print("=" * 60)
+        print(sm.delete_path(str(root)))
+
+        passed += 1
+
+    except Exception as e:
+
+        print(e)
+
+        failed += 1
+
+    # --------------------------------------------------
+    section("Volume Manager")
+
+    try:
+
+        original = sm.get_volume()
+
+        print("Original:", original)
+
+        print(sm.set_volume(30))
+
+        input("\nENTER")
+
+        print(sm.increase_volume(20))
+
+        input("\nENTER")
+
+        print(sm.decrease_volume(10))
+
+        input("\nENTER")
+
+        print(sm.mute())
+
+        print("Muted:", sm.is_muted())
+
+        input("\nENTER")
+
+        print(sm.unmute())
+
+        sm.set_volume(original)
+
+        print("Restored:", original)
+
+        passed += 1
+
+    except Exception as e:
+
+        print(e)
+
+        failed += 1
+
+    # --------------------------------------------------
+    section("Brightness Manager")
+
+    try:
+
+        original = sm.get_brightness()
+
+        print("Original:", original)
+
+        print(sm.set_brightness(40))
+
+        input("\nENTER")
+
+        print(sm.increase_brightness(20))
+
+        input("\nENTER")
+
+        print(sm.decrease_brightness(10))
+
+        sm.set_brightness(original)
+
+        print("Restored:", original)
+
+        passed += 1
+
+    except Exception as e:
+
+        print(e)
+
+        failed += 1
+
+    # --------------------------------------------------
+    section("Clipboard Manager")
+
+    try:
+
+        original = sm.paste_text()
+
+        print(sm.copy_text("Hello JARVIS"))
+
+        print(sm.paste_text())
+
+        print(sm.clear_clipboard())
+
+        print(repr(sm.paste_text()))
+
+        sm.copy_text(original)
+
+        passed += 1
+
+    except Exception as e:
+
+        print(e)
+
+        failed += 1
+
+    # --------------------------------------------------
+    section("Screenshot Manager")
+
+    try:
+
+        print(sm.take_screenshot())
+
+        print(sm.open_last_screenshot())
+
+        passed += 1
+
+    except Exception as e:
+
+        print(e)
+
+        failed += 1
+
+    # --------------------------------------------------
+    section("Power Manager")
+
+    try:
+
+        print(sm.shutdown(
+            delay=60,
+            dry_run=True,
+        ))
+
+        print(sm.restart(
+            delay=60,
+            dry_run=True,
+        ))
+
+        print(sm.lock(
+            dry_run=True,
+        ))
+
+        print(sm.sleep(
+            dry_run=True,
+        ))
+
+        print(sm.hibernate(
+            dry_run=True,
+        ))
+
+        print(sm.logoff(
+            dry_run=True,
+        ))
+
+        print(sm.cancel_shutdown())
+
+        passed += 1
+
+    except Exception as e:
+
+        print(e)
+
+        failed += 1
+
+    # --------------------------------------------------
+
+    print("\n" + LINE)
+    print("FINAL REPORT")
+    print(LINE)
+
+    print(f"Passed : {passed}")
+    print(f"Failed : {failed}")
+
+    if failed == 0:
+
+        print("\n🎉 PHASE 10.9 PASSED")
+
+    else:
+
+        print("\n❌ PHASE 10.9 FAILED")
+
+    print(LINE)
 
 
 if __name__ == "__main__":
